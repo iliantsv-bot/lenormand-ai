@@ -156,3 +156,34 @@ if (q || spreadParam || langParam) {
 
 </body>
 </html>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD5Dns_eABdim-4OWn6YR8tmIVQ3aSMj_Q",
+  authDomain: "madame-lenormand.firebaseapp.com",
+  projectId: "madame-lenormand",
+  storageBucket: "madame-lenormand.firebasestorage.app",
+  messagingSenderId: "982255445581",
+  appId: "1:982255445581:web:13c375654864385ff11e04"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+window.loginWithGoogle = async function () {
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    document.getElementById("result").innerHTML =
+      "✅ Влязъл си като: " + user.email;
+
+  } catch (error) {
+    document.getElementById("result").innerHTML =
+      "❌ Грешка: " + error.message;
+  }
+};
+</script>
