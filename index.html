@@ -146,7 +146,7 @@ getRedirectResult(auth)
   })
   .catch((error) => {
     document.getElementById("result").innerHTML =
-      "❌ Грешка: " + error.message;
+      "❌ Грешка: " + JSON.stringify(error)
   });
 </script>
 
