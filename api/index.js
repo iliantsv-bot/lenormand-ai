@@ -1,23 +1,36 @@
-<button onclick="drawCard()">Draw Card</button>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Lenormand AI</title>
+</head>
+<body>
 
-<div id="card"></div>
-<div id="result" style="margin-top:20px;font-size:18px;"></div>
+  <h1>Lenormand AI</h1>
 
-<script>
-async function drawCard() {
-  const result = document.getElementById('result');
-  result.innerText = "Loading...";
+  <button onclick="drawCard()">Draw Card</button>
 
-  try {
-    const res = await fetch('/api/reading');
-    const data = await res.json();
+  <div id="card" style="margin-top:20px;"></div>
+  <div id="result" style="margin-top:20px;font-size:18px;"></div>
 
-    console.log(data); // важно за дебъг
+  <script>
+    async function drawCard() {
+      const result = document.getElementById('result');
+      result.innerText = "Loading...";
 
-    result.innerText = data.text;
+      try {
+        const res = await fetch('/api/reading');
+        const data = await res.json();
 
-  } catch (err) {
-    result.innerText = "Error loading AI";
-  }
-}
-</script>
+        console.log(data);
+
+        result.innerText = data.text;
+
+      } catch (err) {
+        result.innerText = "Error loading AI";
+      }
+    }
+  </script>
+
+</body>
+</html>
