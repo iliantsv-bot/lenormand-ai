@@ -13,11 +13,7 @@ body {
   font-family: Arial, sans-serif;
   padding: 20px;
 }
-
-h1 {
-  color: #ffd700;
-}
-
+h1 { color: #ffd700; }
 input, select {
   width: 100%;
   padding: 12px;
@@ -26,7 +22,6 @@ input, select {
   border: none;
   font-size: 16px;
 }
-
 button {
   background: #ffd700;
   color: black;
@@ -35,17 +30,8 @@ button {
   font-weight: bold;
   cursor: pointer;
 }
-
-#result {
-  margin-top: 20px;
-  line-height: 1.6;
-}
-
-.cards {
-  color: #00ffc3;
-  font-weight: bold;
-  margin-bottom: 10px;
-}
+#result { margin-top: 20px; line-height: 1.6; }
+.cards { color: #00ffc3; font-weight: bold; margin-bottom: 10px; }
 </style>
 </head>
 
@@ -53,7 +39,7 @@ button {
 
 <h1>🔮 Lenormand AI</h1>
 
-<!-- 🔐 GOOGLE LOGIN -->
+<!-- LOGIN -->
 <button onclick="loginWithGoogle()">Влезте с Google</button>
 
 <select id="lang">
@@ -76,7 +62,6 @@ button {
 <div id="result"></div>
 
 <script>
-// 🌍 AUTO LANGUAGE
 const params = new URLSearchParams(window.location.search);
 const langParam = params.get("lang");
 
@@ -85,55 +70,38 @@ const userLang = navigator.language || navigator.userLanguage;
 if (langParam) {
   document.getElementById("lang").value = langParam;
 } else {
-  if (userLang.startsWith("bg")) {
-    document.getElementById("lang").value = "bg";
-  } else {
-    document.getElementById("lang").value = "en";
-  }
+  document.getElementById("lang").value = userLang.startsWith("bg") ? "bg" : "en";
 }
 
-// 🔄 UI TEXT SWITCH
 function updateUIText() {
   const lang = document.getElementById("lang").value;
 
-  if (lang === "bg") {
-    document.getElementById("question").placeholder = "Задай въпрос...";
-    document.getElementById("drawBtn").innerText = "Изтегли карти";
-  } else {
-    document.getElementById("question").placeholder = "Ask your question...";
-    document.getElementById("drawBtn").innerText = "Draw Cards";
-  }
+  document.getElementById("question").placeholder =
+    lang === "bg" ? "Задай въпрос..." : "Ask your question...";
+
+  document.getElementById("drawBtn").innerText =
+    lang === "bg" ? "Изтегли карти" : "Draw Cards";
 }
 
 document.getElementById("lang").addEventListener("change", updateUIText);
 updateUIText();
 
-// 🎯 DRAW FUNCTION
 async function drawCards() {
   const question = document.getElementById("question").value;
   const spread = document.getElementById("spread").value;
   const lang = document.getElementById("lang").value;
   const result = document.getElementById("result");
 
-  result.innerHTML = lang === "bg"
-    ? "⏳ Тълкуване..."
-    : "⏳ Reading...";
+  result.innerHTML = lang === "bg" ? "⏳ Тълкуване..." : "⏳ Reading...";
 
   try {
     const res = await fetch(`/api/reading?spread=${spread}&q=${encodeURIComponent(question)}&lang=${lang}`);
-
-    let data = await res.json();
-
-    const text = data.text || (lang === "bg" ? "Няма резултат" : "No result");
-    const cards = data.cards || [];
+    const data = await res.json();
 
     result.innerHTML = `
-      <div class="cards">${lang === "bg" ? "Карти" : "Cards"}: ${cards.join(", ")}</div>
-      <div style="white-space: pre-line;">${text}</div>
+      <div class="cards">${lang === "bg" ? "Карти" : "Cards"}: ${(data.cards || []).join(", ")}</div>
+      <div style="white-space: pre-line;">${data.text || ""}</div>
     `;
-
-    result.scrollIntoView({ behavior: "smooth" });
-
   } catch (err) {
     result.innerHTML = lang === "bg"
       ? "❌ Грешка при зареждане"
@@ -142,41 +110,7 @@ async function drawCards() {
 }
 </script>
 
-<!-- 🔐 FIREBASE LOGIN -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyD5Dns_eABdim-4OWn6YR8tmIVQ3aSMj_Q",
-  authDomain: "madame-lenormand.firebaseapp.com",
-  projectId: "madame-lenormand",
-  storageBucket: "madame-lenormand.firebasestorage.app",
-  messagingSenderId: "982255445581",
-  appId: "1:982255445581:web:13c375654864385ff11e04"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
-
-window.loginWithGoogle = async function () {
-  try {
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
-
-    document.getElementById("result").innerHTML =
-      "✅ Влязъл си като: " + user.email;
-
-  } catch (error) {
-    document.getElementById("result").innerHTML =
-      "❌ Грешка: " + error.message;
-  }
-};
-</script>
-
-</body>
-</html>
+<!-- FIREBASE (ЕДИН СКРИПТ) -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
@@ -199,21 +133,22 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-// 👉 LOGIN BUTTON FUNCTION
 window.loginWithGoogle = function () {
   signInWithRedirect(auth, provider);
 };
 
-// 👉 HANDLE RETURN AFTER LOGIN
 getRedirectResult(auth)
   .then((result) => {
-    if (result && result.user) {
+    if (result?.user) {
       document.getElementById("result").innerHTML =
         "✅ Влязъл си като: " + result.user.email;
     }
   })
   .catch((error) => {
     document.getElementById("result").innerHTML =
-      "❌ Грешка: " + (error.message || "unknown error");
+      "❌ Грешка: " + error.message;
   });
 </script>
+
+</body>
+</html>
