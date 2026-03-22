@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Lenormand AI</title>
+</head>
+<body>
+  <h1>Lenormand AI</h1>
+  <button onclick="draw()">Draw Card</button>
+  <p id="result"></p>
+
+  <script>
+    async function draw() {
+      const res = await fetch('/api/reading');
+      const data = await res.json();
+      document.getElementById('result').innerText = data.message;
+    }
+  </script>
+</body>
+</html>
