@@ -1,36 +1,26 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Lenormand AI</title>
-</head>
-<body>
+export default async function handler(req, res) {
+  try {
+    const cards = ["Heart", "Key", "Tree"];
 
-  <h1>Lenormand AI</h1>
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4.1-mini",
+        input: `Give a clear Lenormand reading for these cards: ${cards.join(", ")}. Be direct and specific.`
+      })
+    });
 
-  <button onclick="drawCard()">Draw Card</button>
+    const data = await response.json();
 
-  <div id="card" style="margin-top:20px;"></div>
-  <div id="result" style="margin-top:20px;font-size:18px;"></div>
+    res.status(200).json({
+      text: data.output?.[0]?.content?.[0]?.text || "No response"
+    });
 
-  <script>
-    async function drawCard() {
-      const result = document.getElementById('result');
-      result.innerText = "Loading...";
-
-      try {
-        const res = await fetch('/api');
-        const data = await res.json();
-
-        console.log(data);
-
-        result.innerText = data.text;
-
-      } catch (err) {
-        result.innerText = "Error loading AI";
-      }
-    }
-  </script>
-
-</body>
-</html>
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
