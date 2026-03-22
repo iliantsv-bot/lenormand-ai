@@ -53,6 +53,9 @@ button {
 
 <h1>🔮 Lenormand AI</h1>
 
+<!-- 🔐 GOOGLE LOGIN -->
+<button onclick="loginWithGoogle()">Влезте с Google</button>
+
 <select id="lang">
   <option value="bg">Български</option>
   <option value="en">English</option>
@@ -121,10 +124,6 @@ async function drawCards() {
 
     let data = await res.json();
 
-    if (typeof data === "string") {
-      data = JSON.parse(data);
-    }
-
     const text = data.text || (lang === "bg" ? "Няма резултат" : "No result");
     const cards = data.cards || [];
 
@@ -141,21 +140,9 @@ async function drawCards() {
       : "❌ Error loading AI";
   }
 }
-
-// 🔗 AUTO LOAD FROM LINK
-const q = params.get("q");
-const spreadParam = params.get("spread");
-
-if (q) document.getElementById("question").value = q;
-if (spreadParam) document.getElementById("spread").value = spreadParam;
-
-if (q || spreadParam || langParam) {
-  drawCards();
-}
 </script>
 
-</body>
-</html>
+<!-- 🔐 FIREBASE LOGIN -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -187,3 +174,6 @@ window.loginWithGoogle = async function () {
   }
 };
 </script>
+
+</body>
+</html>
