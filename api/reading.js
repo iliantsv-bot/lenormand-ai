@@ -1,5 +1,30 @@
 export default async function handler(req, res) {
   try {
+    const cards = [
+      "Rider","Clover","Ship","House","Tree","Clouds","Snake","Coffin",
+      "Bouquet","Scythe","Whip","Birds","Child","Fox","Bear","Stars",
+      "Stork","Dog","Tower","Garden","Mountain","Crossroads","Mice",
+      "Heart","Ring","Book","Letter","Man","Woman","Lily","Sun",
+      "Moon","Key","Fish","Anchor","Cross"
+    ];
+
+    // теглим 3 карти
+    const drawn = cards.sort(() => 0.5 - Math.random()).slice(0, 3);
+
+    const prompt = `
+You are a professional Lenormand reader.
+
+Cards: ${drawn.join(", ")}
+
+Give a detailed interpretation with:
+- overall meaning
+- love
+- career
+- advice
+
+Minimum 120 words.
+`;
+
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
@@ -8,36 +33,32 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "gpt-4.1-mini",
-        input: "Give a short Lenormand card reading."
+        input: prompt
       })
     });
 
     const data = await response.json();
 
-    // 👉 DEBUG – ако има грешка, ще я видиш
+    // ако OpenAI върне грешка
     if (!response.ok) {
-      return res.status(500).json({ error: JSON.stringify(data) });
+      return res.status(500).json({
+        error: data
+      });
     }
 
-    // 👉 по-сигурно извличане
-    let text = "No response";
+    const text =
+      data.output_text ||
+      data.output?.[0]?.content?.[0]?.text ||
+      "No interpretation";
 
-    if (data.output && data.output.length > 0) {
-      const content = data.output[0].content;
-
-      if (content && content.length > 0) {
-        for (let item of content) {
-          if (item.text) {
-            text = item.text;
-            break;
-          }
-        }
-      }
-    }
-
-    res.status(200).json({ text });
+    res.status(200).json({
+      cards: drawn,
+      text: text
+    });
 
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message
+    });
   }
 }
