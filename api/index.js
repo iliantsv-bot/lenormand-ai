@@ -17,8 +17,8 @@ export default async function handler(req, res) {
     const data = await response.json();
 
     res.status(200).json({
-      text: data.output?.[0]?.content?.[0]?.text || "No response"
-    });
+  text: data.output?.[0]?.content?.[0]?.text || "No response from AI"
+});
 
   } catch (error) {
     res.status(500).json({ error: error.message });
