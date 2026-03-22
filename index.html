@@ -1,19 +1,61 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Lenormand AI</title>
-</head>
-<body>
-  <h1>Lenormand AI</h1>
-  <button onclick="draw()">Draw Card</button>
-  <p id="result"></p>
+export default async function handler(req, res) {
+  try {
+    const spreads = {
+      "1": 1,
+      "3": 3,
+      "5": 5,
+      "mirror": 3,
+      "yesno": 1,
+      "full": 5
+    };
 
-  <script>
-    async function draw() {
-      const res = await fetch('/api/reading');
-      const data = await res.json();
-      document.getElementById('result').innerText = data.message;
-    }
-  </script>
-</body>
-</html>
+    const spread = req.query.spread || "3";
+    const count = spreads[spread] || 3;
+
+    const cardsList = [
+      "Rider","Clover","Ship","House","Tree","Clouds","Snake","Coffin",
+      "Bouquet","Scythe","Whip","Birds","Child","Fox","Bear","Stars",
+      "Stork","Dog","Tower","Garden","Mountain","Crossroads","Mice",
+      "Heart","Ring","Book","Letter","Man","Woman","Lily","Sun",
+      "Moon","Key","Fish","Anchor","Cross"
+    ];
+
+    const shuffled = cardsList.sort(() => 0.5 - Math.random());
+    const drawn = shuffled.slice(0, count);
+
+    const prompt = `
+Cards: ${drawn.join(", ")}
+
+Spread: ${spread}
+
+Give a clear Lenormand reading.
+`;
+
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4.1-mini",
+        input: prompt
+      })
+    });
+
+    const data = await response.json();
+
+    const text =
+      data.output_text ||
+      data.output?.[0]?.content?.[0]?.text ||
+      "No interpretation";
+
+    res.status(200).json({
+      cards: drawn,
+      text: text
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
