@@ -1,123 +1,55 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Lenormand AI</title>
-
-<style>
-body {
-  background: #0b0b0b;
-  color: white;
-  font-family: Arial;
-  text-align: center;
-  padding: 30px;
-}
-
-h1 {
-  margin-bottom: 20px;
-}
-
-select, button {
-  padding: 12px;
-  font-size: 16px;
-  margin: 10px;
-}
-
-button {
-  background: gold;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.cards {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 30px;
-  flex-wrap: wrap;
-}
-
-.card {
-  width: 100px;
-  height: 140px;
-  background: linear-gradient(135deg, #222, #444);
-  border: 2px solid gold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  padding: 5px;
-}
-
-#result {
-  margin-top: 30px;
-  font-size: 18px;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-  line-height: 1.6;
-}
-</style>
-
-</head>
-<body>
-
-<h1>🔮 Lenormand AI Reading</h1>
-
-<select id="spread">
-  <option value="1">1 Card</option>
-  <option value="3">3 Cards</option>
-  <option value="5">5 Cards</option>
-  <option value="mirror">Mirror Spread</option>
-  <option value="yesno">Yes / No</option>
-  <option value="full">Full Reading</option>
-</select>
-
-<br>
-
-<button onclick="drawCards()">Draw Cards</button>
-
-<div class="cards" id="cards"></div>
-<div id="result"></div>
-
-<script>
-async function drawCards() {
-  const result = document.getElementById("result");
-  const cardsDiv = document.getElementById("cards");
-  const type = document.getElementById("spread").value;
-
-  result.innerText = "Reading...";
-  cardsDiv.innerHTML = "";
-
+export default async function handler(req, res) {
   try {
-    const res = await fetch(`/api?spread=${type}`);
-    const data = await res.json();
+    const spreads = {
+      "1": 1,
+      "3": 3,
+      "5": 5,
+      "mirror": 3,
+      "yesno": 1,
+      "full": 5
+    };
 
-    console.log(data);
+    const spread = req.query.spread || "3";
+    const count = spreads[spread] || 3;
 
-    // fallback ако има грешка
-    if (!data.cards) {
-      result.innerText = JSON.stringify(data);
-      return;
-    }
+    const cardsList = [
+      "Rider","Clover","Ship","House","Tree","Clouds","Snake","Coffin",
+      "Bouquet","Scythe","Whip","Birds","Child","Fox","Bear","Stars",
+      "Stork","Dog","Tower","Garden","Mountain","Crossroads","Mice",
+      "Heart","Ring","Book","Letter","Man","Woman","Lily","Sun",
+      "Moon","Key","Fish","Anchor","Cross"
+    ];
 
-    // показваме картите
-    data.cards.forEach(card => {
-      const div = document.createElement("div");
-      div.className = "card";
-      div.innerText = card;
-      cardsDiv.appendChild(div);
+    const shuffled = cardsList.sort(() => 0.5 - Math.random());
+    const drawn = shuffled.slice(0, count);
+
+    const prompt = `Cards: ${drawn.join(", ")}. Give a clear Lenormand reading.`;
+
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4.1-mini",
+        input: prompt
+      })
     });
 
-    // показваме текста
-    result.innerText = data.text || "No response";
+    const data = await response.json();
 
-  } catch (err) {
-    result.innerText = "Error: " + err.message;
+    const text =
+      data.output_text ||
+      data.output?.[0]?.content?.[0]?.text ||
+      "No interpretation";
+
+    res.status(200).json({
+      cards: drawn,
+      text: text
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 }
-</script>
-
-</body>
-</html>
