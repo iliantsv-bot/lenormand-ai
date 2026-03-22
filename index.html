@@ -20,8 +20,8 @@
 
 <button onclick="drawCard()">Draw Cards</button>
 
-<div id="cards" style="margin-top:20px;"></div>
-<div id="result" style="margin-top:20px;"></div>
+<div id="cards" style="margin-top:20px;font-weight:bold;"></div>
+<div id="result" style="margin-top:20px;white-space:pre-line;"></div>
 
 <script>
 async function drawCard() {
@@ -33,16 +33,27 @@ async function drawCard() {
   cardsDiv.innerText = "";
 
   try {
-    const res = await fetch(`/api/reading?spread=${spread}`);
+    const res = await fetch(`https://lenormand-ai.vercel.app/api/reading?spread=${spread}`);
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.log("API ERROR:", text);
+      result.innerText = "Server error";
+      return;
+    }
+
     const data = await res.json();
 
-    // показва карти
-    cardsDiv.innerText = "Cards: " + data.cards.join(", ");
+    if (!data.cards || !data.text) {
+      result.innerText = "Invalid response from AI";
+      return;
+    }
 
-    // показва тълкуване
+    cardsDiv.innerText = "Cards: " + data.cards.join(", ");
     result.innerText = data.text;
 
   } catch (err) {
+    console.log(err);
     result.innerText = "Error loading AI";
   }
 }
