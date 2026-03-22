@@ -1,116 +1,115 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html><html lang="bg">
 <head>
-  <meta charset="UTF-8">
-  <title>Lenormand AI</title>  <style>
-    body {
-      background: #000;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      padding: 30px;
-    }
+<meta charset="UTF-8">
+<title>Lenormand AI</title><style>
+body {
+  background:#000;
+  color:#fff;
+  font-family:Arial;
+  padding:30px;
+}
 
-    h1 {
-      color: gold;
-    }
+h1 { color:gold; }
 
-    input, select {
-      padding: 12px;
-      font-size: 16px;
-      margin: 10px 0;
-      width: 300px;
-      border: none;
-      border-radius: 5px;
-    }
+input, select {
+  padding:12px;
+  margin:10px 0;
+  font-size:16px;
+  width:280px;
+}
 
-    button {
-      padding: 12px 20px;
-      font-size: 16px;
-      background: gold;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: bold;
-    }
+button {
+  padding:12px 20px;
+  font-size:16px;
+  background:gold;
+  border:none;
+  cursor:pointer;
+  font-weight:bold;
+}
 
-    button:hover {
-      opacity: 0.9;
-    }
+#cards {
+  margin-top:20px;
+  font-weight:bold;
+  color:#00ffcc;
+}
 
-    .cards {
-      margin-top: 20px;
-      font-weight: bold;
-      color: #00ffcc;
-    }
+#result {
+  margin-top:20px;
+  line-height:1.6;
+  white-space:pre-line;
+}
+</style></head>
+<body><h1 id="title">🔮 Lenormand AI</h1><select id="lang">
+  <option value="bg">Български</option>
+  <option value="en">English</option>
+</select><br><input id="question" placeholder="Задай въпрос..." /><br><select id="spread">
+  <option value="1">1 карта</option>
+  <option value="3" selected>3 карти</option>
+  <option value="5">5 карти</option>
+  <option value="mirror">Огледален</option>
+  <option value="yesno">Да / Не</option>
+</select><br><button id="btn" onclick="drawCards()">Изтегли карти</button>
 
-    .result {
-      margin-top: 20px;
-      line-height: 1.6;
-      max-width: 700px;
-      white-space: pre-wrap;
-    }
+<div id="cards"></div>
+<div id="result"></div><script>
 
-    .loading {
-      color: orange;
-    }
+// 🌍 преводи
+const t = {
+  bg: {
+    placeholder: "Задай въпрос...",
+    button: "Изтегли карти",
+    loading: "Зареждане..."
+  },
+  en: {
+    placeholder: "Ask your question...",
+    button: "Draw Cards",
+    loading: "Loading..."
+  }
+};
 
-    .error {
-      color: red;
-    }
-  </style></head><body><h1>🔮 Lenormand AI</h1><input id="question" placeholder="Ask your question..." /><br><select id="spread">
-  <option value="1">1 Card</option>
-  <option value="3" selected>3 Cards</option>
-  <option value="5">5 Cards</option>
-  <option value="mirror">Mirror Reading</option>
-  <option value="yesno">Yes / No</option>
-</select><br><button onclick="drawCards()">Draw Cards</button>
+// смяна на език (UI)
+document.getElementById("lang").addEventListener("change", () => {
+  const lang = document.getElementById("lang").value;
 
-<div class="cards" id="cards"></div>
-<div class="result" id="result"></div><script>
+  document.getElementById("question").placeholder = t[lang].placeholder;
+  document.getElementById("btn").innerText = t[lang].button;
+});
+
+// 🔮 основна функция
 async function drawCards() {
+
   const question = document.getElementById("question").value.trim();
   const spread = document.getElementById("spread").value;
+  const lang = document.getElementById("lang").value;
 
-  const resultEl = document.getElementById("result");
-  const cardsEl = document.getElementById("cards");
+  const result = document.getElementById("result");
+  const cards = document.getElementById("cards");
 
-  resultEl.className = "result loading";
-  resultEl.innerText = "Loading reading...";
-  cardsEl.innerText = "";
+  result.innerText = t[lang].loading;
+  cards.innerText = "";
 
   try {
-    const response = await fetch("/api/reading", {
+    const res = await fetch("/api/reading", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        question: question || "General reading",
-        spread: spread
+        question: question || (lang === "bg" ? "Общо тълкуване" : "General reading"),
+        spread: spread,
+        lang: lang
       })
     });
 
-    // Проверка дали отговорът е JSON
-    const contentType = response.headers.get("content-type");
+    const data = await res.json();
 
-    if (!contentType || !contentType.includes("application/json")) {
-      throw new Error("Server returned invalid response (not JSON)");
-    }
-
-    const data = await response.json();
-
-    if (data.error) {
-      throw new Error(data.error);
-    }
-
-    cardsEl.innerText = "Cards: " + (data.cards?.join(", ") || "No cards");
-
-    resultEl.className = "result";
-    resultEl.innerText = data.text || "No interpretation received";
+    cards.innerText = "Cards: " + data.cards.join(", ");
+    result.innerText = data.text;
 
   } catch (err) {
-    resultEl.className = "result error";
-    resultEl.innerText = "Error: " + err.message;
+    result.innerText = "Error loading AI";
   }
 }
+
 </script></body>
 </html>
