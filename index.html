@@ -1,131 +1,116 @@
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Lenormand AI</title>
-
-  <style>
+  <title>Lenormand AI</title>  <style>
     body {
+      background: #000;
+      color: #fff;
       font-family: Arial, sans-serif;
-      background: #111;
-      color: #eee;
-      padding: 20px;
+      padding: 30px;
     }
 
     h1 {
       color: gold;
     }
 
-    select, button, input {
-      padding: 10px;
-      margin-top: 10px;
+    input, select {
+      padding: 12px;
       font-size: 16px;
+      margin: 10px 0;
+      width: 300px;
+      border: none;
+      border-radius: 5px;
     }
 
     button {
+      padding: 12px 20px;
+      font-size: 16px;
       background: gold;
       border: none;
+      border-radius: 5px;
       cursor: pointer;
+      font-weight: bold;
     }
 
-    #cards {
+    button:hover {
+      opacity: 0.9;
+    }
+
+    .cards {
       margin-top: 20px;
       font-weight: bold;
       color: #00ffcc;
     }
 
-    #result {
+    .result {
       margin-top: 20px;
-      white-space: pre-line;
       line-height: 1.6;
+      max-width: 700px;
+      white-space: pre-wrap;
     }
 
-    #question {
-      width: 100%;
-      max-width: 400px;
+    .loading {
+      color: orange;
     }
-  </style>
-</head>
-<body>
 
-<h1>🔮 Lenormand AI</h1>
-
-<input id="question" placeholder="Ask your question..." />
-
-<br>
-
-<select id="spread">
+    .error {
+      color: red;
+    }
+  </style></head><body><h1>🔮 Lenormand AI</h1><input id="question" placeholder="Ask your question..." /><br><select id="spread">
   <option value="1">1 Card</option>
   <option value="3" selected>3 Cards</option>
   <option value="5">5 Cards</option>
   <option value="mirror">Mirror Reading</option>
   <option value="yesno">Yes / No</option>
-</select>
+</select><br><button onclick="drawCards()">Draw Cards</button>
 
-<br>
-
-<button onclick="drawCard()">Draw Cards</button>
-
-<div id="cards"></div>
-<div id="result"></div>
-
-<script>
-async function drawCard() {
-  const result = document.getElementById("result");
-  const cardsDiv = document.getElementById("cards");
+<div class="cards" id="cards"></div>
+<div class="result" id="result"></div><script>
+async function drawCards() {
+  const question = document.getElementById("question").value.trim();
   const spread = document.getElementById("spread").value;
-  const question = document.getElementById("question").value;
 
-  result.innerText = "Loading...";
-  cardsDiv.innerText = "";
+  const resultEl = document.getElementById("result");
+  const cardsEl = document.getElementById("cards");
+
+  resultEl.className = "result loading";
+  resultEl.innerText = "Loading reading...";
+  cardsEl.innerText = "";
 
   try {
-    let url = "https://lenormand-ai.vercel.app/api/reading?spread=" + spread;
+    const response = await fetch("/api/reading", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        question: question || "General reading",
+        spread: spread
+      })
+    });
 
-    if (question) {
-      url += "&q=" + encodeURIComponent(question);
+    // Проверка дали отговорът е JSON
+    const contentType = response.headers.get("content-type");
+
+    if (!contentType || !contentType.includes("application/json")) {
+      throw new Error("Server returned invalid response (not JSON)");
     }
 
-    console.log("CALL:", url);
+    const data = await response.json();
 
-    const res = await fetch(url);
-
-    const raw = await res.text();
-    console.log("RAW:", raw);
-
-    const data = JSON.parse(raw);
-
-    if (!data.cards || !data.text) {
-      result.innerText = "Invalid response from AI";
-      return;
+    if (data.error) {
+      throw new Error(data.error);
     }
 
-    // Карти
-    cardsDiv.innerText = "🃏 Cards: " + data.cards.join(" • ");
+    cardsEl.innerText = "Cards: " + (data.cards?.join(", ") || "No cards");
 
-    // YES / NO подсилване
-    let output = data.text;
-
-    if (spread === "yesno") {
-      output = "👉 ANSWER: " + output;
-    }
-
-    if (spread === "mirror") {
-      output = "🪞 MIRROR READING:\n\n" + output;
-    }
-
-    if (question) {
-      output = "❓ Question: " + question + "\n\n" + output;
-    }
-
-    result.innerText = output;
+    resultEl.className = "result";
+    resultEl.innerText = data.text || "No interpretation received";
 
   } catch (err) {
-    console.log(err);
-    result.innerText = "Error loading AI";
+    resultEl.className = "result error";
+    resultEl.innerText = "Error: " + err.message;
   }
 }
-</script>
-
-</body>
+</script></body>
 </html>
