@@ -40,6 +40,7 @@ button {
   margin-top: 20px;
   line-height: 1.6;
 }
+
 .cards {
   color: #00ffc3;
   font-weight: bold;
@@ -67,52 +68,86 @@ button {
   <option value="yesno">Да / Не</option>
 </select>
 
-<button onclick="drawCards()">Изтегли карти</button>
+<button onclick="drawCards()" id="drawBtn">Изтегли карти</button>
 
 <div id="result"></div>
 
 <script>
+// 🌍 AUTO LANGUAGE
+const params = new URLSearchParams(window.location.search);
+const langParam = params.get("lang");
+
+const userLang = navigator.language || navigator.userLanguage;
+
+if (langParam) {
+  document.getElementById("lang").value = langParam;
+} else {
+  if (userLang.startsWith("bg")) {
+    document.getElementById("lang").value = "bg";
+  } else {
+    document.getElementById("lang").value = "en";
+  }
+}
+
+// 🔄 UI TEXT SWITCH
+function updateUIText() {
+  const lang = document.getElementById("lang").value;
+
+  if (lang === "bg") {
+    document.getElementById("question").placeholder = "Задай въпрос...";
+    document.getElementById("drawBtn").innerText = "Изтегли карти";
+  } else {
+    document.getElementById("question").placeholder = "Ask your question...";
+    document.getElementById("drawBtn").innerText = "Draw Cards";
+  }
+}
+
+document.getElementById("lang").addEventListener("change", updateUIText);
+updateUIText();
+
+// 🎯 DRAW FUNCTION
 async function drawCards() {
   const question = document.getElementById("question").value;
   const spread = document.getElementById("spread").value;
   const lang = document.getElementById("lang").value;
   const result = document.getElementById("result");
 
-  result.innerHTML = "⏳ Зареждане...";
+  result.innerHTML = lang === "bg"
+    ? "⏳ Тълкуване..."
+    : "⏳ Reading...";
 
   try {
     const res = await fetch(`/api/reading?spread=${spread}&q=${encodeURIComponent(question)}&lang=${lang}`);
-    
+
     let data = await res.json();
 
-    // FIX за JSON/string проблем
     if (typeof data === "string") {
       data = JSON.parse(data);
     }
 
-    const text = data.text || "Няма резултат";
+    const text = data.text || (lang === "bg" ? "Няма резултат" : "No result");
     const cards = data.cards || [];
 
     result.innerHTML = `
-      <div class="cards">Cards: ${cards.join(", ")}</div>
+      <div class="cards">${lang === "bg" ? "Карти" : "Cards"}: ${cards.join(", ")}</div>
       <div style="white-space: pre-line;">${text}</div>
     `;
 
+    result.scrollIntoView({ behavior: "smooth" });
+
   } catch (err) {
-    result.innerHTML = "❌ Error loading AI";
+    result.innerHTML = lang === "bg"
+      ? "❌ Грешка при зареждане"
+      : "❌ Error loading AI";
   }
 }
 
-/* AUTO LINK PARAMS */
-const params = new URLSearchParams(window.location.search);
-
+// 🔗 AUTO LOAD FROM LINK
 const q = params.get("q");
 const spreadParam = params.get("spread");
-const langParam = params.get("lang");
 
 if (q) document.getElementById("question").value = q;
 if (spreadParam) document.getElementById("spread").value = spreadParam;
-if (langParam) document.getElementById("lang").value = langParam;
 
 if (q || spreadParam || langParam) {
   drawCards();
