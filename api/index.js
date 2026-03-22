@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Lenormand AI Reading</title>
+<title>Lenormand AI</title>
 
 <style>
 body {
@@ -17,34 +17,37 @@ h1 {
   margin-bottom: 20px;
 }
 
+select, button {
+  padding: 12px;
+  font-size: 16px;
+  margin: 10px;
+}
+
 button {
-  padding: 14px 28px;
-  font-size: 18px;
   background: gold;
   border: none;
   cursor: pointer;
   font-weight: bold;
-  margin-top: 10px;
 }
 
 .cards {
   display: flex;
   justify-content: center;
-  gap: 15px;
+  gap: 10px;
   margin-top: 30px;
+  flex-wrap: wrap;
 }
 
 .card {
-  width: 110px;
-  height: 150px;
+  width: 100px;
+  height: 140px;
   background: linear-gradient(135deg, #222, #444);
   border: 2px solid gold;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
-  text-align: center;
-  padding: 10px;
+  font-size: 13px;
+  padding: 5px;
 }
 
 #result {
@@ -62,36 +65,44 @@ button {
 
 <h1>🔮 Lenormand AI Reading</h1>
 
+<select id="spread">
+  <option value="1">1 Card</option>
+  <option value="3">3 Cards</option>
+  <option value="5">5 Cards</option>
+  <option value="mirror">Mirror Spread</option>
+  <option value="yesno">Yes / No</option>
+  <option value="full">Full Reading</option>
+</select>
+
+<br>
+
 <button onclick="drawCards()">Draw Cards</button>
 
 <div class="cards" id="cards"></div>
 <div id="result"></div>
 
 <script>
-
-// всички 36 карти (за визуализация при нужда)
-const allCards = [
-"Rider","Clover","Ship","House","Tree","Clouds",
-"Snake","Coffin","Bouquet","Scythe","Whip","Birds",
-"Child","Fox","Bear","Stars","Stork","Dog",
-"Tower","Garden","Mountain","Crossroads","Mice","Heart",
-"Ring","Book","Letter","Man","Woman","Lily",
-"Sun","Moon","Key","Fish","Anchor","Cross"
-];
-
 async function drawCards() {
   const result = document.getElementById("result");
   const cardsDiv = document.getElementById("cards");
+  const type = document.getElementById("spread").value;
 
-  result.innerText = "Reading your future...";
+  result.innerText = "Reading...";
   cardsDiv.innerHTML = "";
 
   try {
-    // Викаме API (който вече тегли 3 карти)
-    const res = await fetch("/api");
+    const res = await fetch(`/api?spread=${type}`);
     const data = await res.json();
 
-    // Показваме картите
+    console.log(data);
+
+    // fallback ако има грешка
+    if (!data.cards) {
+      result.innerText = JSON.stringify(data);
+      return;
+    }
+
+    // показваме картите
     data.cards.forEach(card => {
       const div = document.createElement("div");
       div.className = "card";
@@ -99,14 +110,13 @@ async function drawCards() {
       cardsDiv.appendChild(div);
     });
 
-    // Показваме AI текста
-    result.innerText = data.text;
+    // показваме текста
+    result.innerText = data.text || "No response";
 
   } catch (err) {
-    result.innerText = "Error loading AI";
+    result.innerText = "Error: " + err.message;
   }
 }
-
 </script>
 
 </body>
