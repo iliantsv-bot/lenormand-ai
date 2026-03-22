@@ -19,7 +19,7 @@
       result.innerText = "Loading...";
 
       try {
-        const res = await fetch('/api/reading');
+        const res = await fetch('/api');
         const data = await res.json();
 
         console.log(data);
