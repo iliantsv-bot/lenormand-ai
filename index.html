@@ -10,8 +10,8 @@
 
 <button onclick="drawCard()">Draw Cards</button>
 
-<div id="cards"></div>
-<div id="result"></div>
+<div id="cards" style="margin-top:20px;"></div>
+<div id="result" style="margin-top:20px; font-size:18px;"></div>
 
 <script>
 async function drawCard() {
@@ -22,14 +22,24 @@ async function drawCard() {
   cardsDiv.innerText = "";
 
   try {
-    const res = await fetch('/api?spread=3');
+    const res = await fetch('/api');
+
     const data = await res.json();
 
+    console.log("API RESPONSE:", data);
+
+    // ако API върне грешка
+    if (!res.ok) {
+      result.innerText = JSON.stringify(data);
+      return;
+    }
+
     cardsDiv.innerText = "Cards: " + data.cards.join(", ");
-    result.innerText = data.text;
+    result.innerText = data.text || "No reading";
 
   } catch (err) {
-    result.innerText = "Error loading AI";
+    console.log("FRONT ERROR:", err);
+    result.innerText = err.message;
   }
 }
 </script>
