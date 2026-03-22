@@ -40,7 +40,7 @@ button {
 <h1>🔮 Lenormand AI</h1>
 
 <!-- LOGIN -->
-<button onclick="loginWithGoogle()">Влезте с Google</button>
+<button onclick="loginWithGoogle()">Влез с Google</button>
 
 <select id="lang">
   <option value="bg">Български</option>
@@ -69,8 +69,9 @@ const langParam = params.get("lang");
 const userLang = navigator.language || navigator.userLanguage;
 
 document.getElementById("lang").value =
-  langParam || (userLang.startsWith("bg") ? "bg" : "en");
+  langParam ? langParam : (userLang.startsWith("bg") ? "bg" : "en");
 
+// 🔄 TEXT SWITCH
 function updateUIText() {
   const lang = document.getElementById("lang").value;
 
@@ -84,7 +85,7 @@ function updateUIText() {
 document.getElementById("lang").addEventListener("change", updateUIText);
 updateUIText();
 
-// 🎯 AI FUNCTION (НЕ ПИПАЙ)
+// 🎯 AI FUNCTION
 async function drawCards() {
   const question = document.getElementById("question").value;
   const spread = document.getElementById("spread").value;
@@ -102,19 +103,20 @@ async function drawCards() {
       <div style="white-space: pre-line;">${data.text || ""}</div>
     `;
   } catch (err) {
-    result.innerHTML = "❌ AI Error: " + err.message;
+    result.innerHTML = lang === "bg"
+      ? "❌ Грешка при зареждане"
+      : "❌ Error loading AI";
   }
 }
 </script>
 
-<!-- 🔐 FIREBASE LOGIN -->
+<!-- FIREBASE LOGIN -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getAuth,
   GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult
+  signInWithPopup
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
@@ -130,25 +132,18 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-// 👉 LOGIN BUTTON
-window.loginWithGoogle = function () {
-  signInWithRedirect(auth, provider);
-};
-
-// 👉 HANDLE REDIRECT RESULT
-getRedirectResult(auth)
-  .then((result) => {
-    if (result && result.user) {
-      document.getElementById("result").innerHTML =
-        "✅ Успешен вход: " + result.user.email;
-    }
-  })
-  .catch((error) => {
-    console.error("LOGIN ERROR:", error);
+window.loginWithGoogle = async function () {
+  try {
+    const result = await signInWithPopup(auth, provider);
 
     document.getElementById("result").innerHTML =
-      "❌ Login error: " + (error.code || "") + " | " + (error.message || "Unknown error");
-  });
+      "✅ Влязъл си като: " + result.user.email;
+
+  } catch (error) {
+    document.getElementById("result").innerHTML =
+      "❌ " + error.code + " | " + error.message;
+  }
+};
 </script>
 
 </body>
