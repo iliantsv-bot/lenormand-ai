@@ -2,6 +2,12 @@ export default async function handler(req, res) {
   try {
     const { spread = "3", q = "", lang = "en" } = req.query;
 
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({
+        error: "Missing OPENAI_API_KEY"
+      });
+    }
+
     const spreads = {
       "1": 1,
       "3": 3,
@@ -20,7 +26,6 @@ export default async function handler(req, res) {
       "Moon","Key","Fish","Anchor","Cross"
     ];
 
-    // random cards
     const drawn = cardsList
       .sort(() => 0.5 - Math.random())
       .slice(0, count);
@@ -34,13 +39,14 @@ Question: ${q}
 
 Cards: ${drawn.join(", ")}
 
-Write full structured reading:
+Write:
 - Overall Meaning
 - Love
 - Career
 - Advice
 
-Be detailed and human-like.
+IMPORTANT:
+If language is Bulgarian, write ONLY in Bulgarian.
 `;
 
     const response = await fetch("https://api.openai.com/v1/responses", {
@@ -57,16 +63,25 @@ Be detailed and human-like.
 
     const data = await response.json();
 
-    const text = data.output?.[0]?.content?.[0]?.text || "No response";
+    // 🔥 ВАЖНО: виж грешката ако има
+    if (!response.ok) {
+      return res.status(500).json({
+        error: data
+      });
+    }
 
-    res.status(200).json({
+    const text =
+      data.output?.[0]?.content?.[0]?.text ||
+      "No interpretation generated.";
+
+    return res.status(200).json({
       cards: drawn,
       text
     });
 
   } catch (err) {
-    res.status(500).json({
-      error: err.message
+    return res.status(500).json({
+      error: err.message || "Server error"
     });
   }
 }
