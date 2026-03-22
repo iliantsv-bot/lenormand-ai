@@ -8,38 +8,42 @@
 
 <h1>Lenormand AI</h1>
 
+<select id="spread">
+  <option value="1">1 Card</option>
+  <option value="3" selected>3 Cards</option>
+  <option value="5">5 Cards</option>
+  <option value="mirror">Mirror</option>
+  <option value="yesno">Yes / No</option>
+</select>
+
+<br><br>
+
 <button onclick="drawCard()">Draw Cards</button>
 
 <div id="cards" style="margin-top:20px;"></div>
-<div id="result" style="margin-top:20px; font-size:18px;"></div>
+<div id="result" style="margin-top:20px;"></div>
 
 <script>
 async function drawCard() {
   const result = document.getElementById("result");
   const cardsDiv = document.getElementById("cards");
+  const spread = document.getElementById("spread").value;
 
   result.innerText = "Loading...";
   cardsDiv.innerText = "";
 
   try {
-    const res = await fetch('/api');
-
+    const res = await fetch(`/api/reading?spread=${spread}`);
     const data = await res.json();
 
-    console.log("API RESPONSE:", data);
-
-    // ако API върне грешка
-    if (!res.ok) {
-      result.innerText = JSON.stringify(data);
-      return;
-    }
-
+    // показва карти
     cardsDiv.innerText = "Cards: " + data.cards.join(", ");
-    result.innerText = data.text || "No reading";
+
+    // показва тълкуване
+    result.innerText = data.text;
 
   } catch (err) {
-    console.log("FRONT ERROR:", err);
-    result.innerText = err.message;
+    result.innerText = "Error loading AI";
   }
 }
 </script>
