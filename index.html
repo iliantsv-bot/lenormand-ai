@@ -1,115 +1,79 @@
-<!DOCTYPE html><html lang="bg">
-<head>
-<meta charset="UTF-8">
-<title>Lenormand AI</title><style>
-body {
-  background:#000;
-  color:#fff;
-  font-family:Arial;
-  padding:30px;
-}
-
-h1 { color:gold; }
-
-input, select {
-  padding:12px;
-  margin:10px 0;
-  font-size:16px;
-  width:280px;
-}
-
-button {
-  padding:12px 20px;
-  font-size:16px;
-  background:gold;
-  border:none;
-  cursor:pointer;
-  font-weight:bold;
-}
-
-#cards {
-  margin-top:20px;
-  font-weight:bold;
-  color:#00ffcc;
-}
-
-#result {
-  margin-top:20px;
-  line-height:1.6;
-  white-space:pre-line;
-}
-</style></head>
-<body><h1 id="title">🔮 Lenormand AI</h1><select id="lang">
-  <option value="bg">Български</option>
-  <option value="en">English</option>
-</select><br><input id="question" placeholder="Задай въпрос..." /><br><select id="spread">
-  <option value="1">1 карта</option>
-  <option value="3" selected>3 карти</option>
-  <option value="5">5 карти</option>
-  <option value="mirror">Огледален</option>
-  <option value="yesno">Да / Не</option>
-</select><br><button id="btn" onclick="drawCards()">Изтегли карти</button>
-
-<div id="cards"></div>
-<div id="result"></div><script>
-
-// 🌍 преводи
-const t = {
-  bg: {
-    placeholder: "Задай въпрос...",
-    button: "Изтегли карти",
-    loading: "Зареждане..."
-  },
-  en: {
-    placeholder: "Ask your question...",
-    button: "Draw Cards",
-    loading: "Loading..."
-  }
-};
-
-// смяна на език (UI)
-document.getElementById("lang").addEventListener("change", () => {
-  const lang = document.getElementById("lang").value;
-
-  document.getElementById("question").placeholder = t[lang].placeholder;
-  document.getElementById("btn").innerText = t[lang].button;
-});
-
-// 🔮 основна функция
-async function drawCards() {
-
-  const question = document.getElementById("question").value.trim();
-  const spread = document.getElementById("spread").value;
-  const lang = document.getElementById("lang").value;
-
-  const result = document.getElementById("result");
-  const cards = document.getElementById("cards");
-
-  result.innerText = t[lang].loading;
-  cards.innerText = "";
-
+export default async function handler(req, res) {
   try {
-    const res = await fetch("/api/reading", {
+    const { question, spread, lang } = req.body;
+
+    const cleanSpread = String(spread).trim().toLowerCase();
+
+    const spreads = {
+      "1": 1,
+      "3": 3,
+      "5": 5,
+      "mirror": 5,
+      "yesno": 1
+    };
+
+    const count = spreads[cleanSpread] || 3;
+
+    const cardsList = [
+      "Rider","Clover","Ship","House","Tree","Clouds","Snake","Coffin",
+      "Bouquet","Scythe","Whip","Birds","Child","Fox","Bear","Stars",
+      "Stork","Dog","Tower","Garden","Mountain","Crossroad","Mice",
+      "Heart","Ring","Book","Letter","Man","Woman","Lily","Sun",
+      "Moon","Key","Fish","Anchor","Cross"
+    ];
+
+    const shuffled = cardsList.sort(() => 0.5 - Math.random());
+    const drawn = shuffled.slice(0, count);
+
+    // 🌍 ЕЗИК – ТОВА Е КЛЮЧА
+    const languageInstruction = lang === "bg"
+      ? "Отговори изцяло на български език. Не използвай английски. Пиши естествено, като човек."
+      : "Answer entirely in English.";
+
+    const prompt = `
+You are a professional Lenormand reader.
+
+${languageInstruction}
+
+User question: ${question}
+Spread: ${spread}
+Cards: ${drawn.join(", ")}
+
+Instructions:
+- If 1 card → short answer
+- If 3 cards → past, present, future
+- If 5 cards → deep interpretation
+- If yes/no → start with YES or NO
+
+Include:
+- Overall meaning
+- Love
+- Career
+- Advice
+`;
+
+    const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        question: question || (lang === "bg" ? "Общо тълкуване" : "General reading"),
-        spread: spread,
-        lang: lang
+        model: "gpt-4.1-mini",
+        input: prompt
       })
     });
 
-    const data = await res.json();
+    const data = await response.json();
 
-    cards.innerText = "Cards: " + data.cards.join(", ");
-    result.innerText = data.text;
+    const text = data.output?.[0]?.content?.[0]?.text || "No response";
 
-  } catch (err) {
-    result.innerText = "Error loading AI";
+    res.status(200).json({
+      cards: drawn,
+      text
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 }
-
-</script></body>
-</html>
