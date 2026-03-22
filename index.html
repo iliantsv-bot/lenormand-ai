@@ -62,16 +62,14 @@ button {
 <div id="result"></div>
 
 <script>
+// 🌍 LANGUAGE
 const params = new URLSearchParams(window.location.search);
 const langParam = params.get("lang");
 
 const userLang = navigator.language || navigator.userLanguage;
 
-if (langParam) {
-  document.getElementById("lang").value = langParam;
-} else {
-  document.getElementById("lang").value = userLang.startsWith("bg") ? "bg" : "en";
-}
+document.getElementById("lang").value =
+  langParam || (userLang.startsWith("bg") ? "bg" : "en");
 
 function updateUIText() {
   const lang = document.getElementById("lang").value;
@@ -86,6 +84,7 @@ function updateUIText() {
 document.getElementById("lang").addEventListener("change", updateUIText);
 updateUIText();
 
+// 🎯 AI FUNCTION (НЕ ПИПАЙ)
 async function drawCards() {
   const question = document.getElementById("question").value;
   const spread = document.getElementById("spread").value;
@@ -103,14 +102,12 @@ async function drawCards() {
       <div style="white-space: pre-line;">${data.text || ""}</div>
     `;
   } catch (err) {
-    result.innerHTML = lang === "bg"
-      ? "❌ Грешка при зареждане"
-      : "❌ Error loading AI";
+    result.innerHTML = "❌ AI Error: " + err.message;
   }
 }
 </script>
 
-<!-- FIREBASE (ЕДИН СКРИПТ) -->
+<!-- 🔐 FIREBASE LOGIN -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
@@ -133,20 +130,24 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
+// 👉 LOGIN BUTTON
 window.loginWithGoogle = function () {
   signInWithRedirect(auth, provider);
 };
 
+// 👉 HANDLE REDIRECT RESULT
 getRedirectResult(auth)
   .then((result) => {
-    if (result?.user) {
+    if (result && result.user) {
       document.getElementById("result").innerHTML =
-        "✅ Влязъл си като: " + result.user.email;
+        "✅ Успешен вход: " + result.user.email;
     }
   })
   .catch((error) => {
+    console.error("LOGIN ERROR:", error);
+
     document.getElementById("result").innerHTML =
-      "❌ Грешка: " + JSON.stringify(error)
+      "❌ Login error: " + (error.code || "") + " | " + (error.message || "Unknown error");
   });
 </script>
 
