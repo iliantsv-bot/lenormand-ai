@@ -2,12 +2,6 @@ export default async function handler(req, res) {
   try {
     const { spread = "3", q = "", lang = "en" } = req.query;
 
-    if (!process.env.OPENAI_API_KEY) {
-      return res.status(500).json({
-        error: "Missing OPENAI_API_KEY"
-      });
-    }
-
     const spreads = {
       "1": 1,
       "3": 3,
@@ -26,26 +20,44 @@ export default async function handler(req, res) {
       "Moon","Key","Fish","Anchor","Cross"
     ];
 
+    // 🎴 random cards
     const drawn = cardsList
       .sort(() => 0.5 - Math.random())
       .slice(0, count);
 
+    // 🌍 STRICT LANGUAGE PROMPT
     const prompt = `
 You are a professional Lenormand reader.
 
-Language: ${lang === "bg" ? "Bulgarian" : "English"}
+STRICT RULE:
+- You MUST answer ONLY in ${lang === "bg" ? "Bulgarian" : "English"} language.
+- Do NOT mix languages.
+- If you break this rule, the answer is invalid.
 
-Question: ${q}
+User question:
+${q}
 
-Cards: ${drawn.join(", ")}
+Cards:
+${drawn.join(", ")}
 
-Write detailed reading with:
-- Overall Meaning
-- Love
-- Career
-- Advice
+Write a high-quality, emotional, human-like reading.
 
-If language is Bulgarian, answer ONLY in Bulgarian.
+Structure:
+
+${lang === "bg" ? `
+Общо значение:
+Любов:
+Кариера:
+Съвет:
+` : `
+Overall Meaning:
+Love:
+Career:
+Advice:
+`}
+
+Be natural, intuitive, and specific.
+Avoid generic AI phrases.
 `;
 
     const response = await fetch("https://api.openai.com/v1/responses", {
@@ -62,40 +74,18 @@ If language is Bulgarian, answer ONLY in Bulgarian.
 
     const data = await response.json();
 
-    // 🔥 ВАЖНО – лог в Vercel
-    console.log("FULL OPENAI RESPONSE:", JSON.stringify(data));
+    const text =
+      data.output?.[0]?.content?.[0]?.text ||
+      (lang === "bg" ? "Няма отговор" : "No response");
 
-    if (!response.ok) {
-      return res.status(500).json({
-        error: "OpenAI error",
-        details: data
-      });
-    }
-
-    let text = "No interpretation generated.";
-
-    try {
-      if (data.output && data.output.length > 0) {
-        const content = data.output[0].content;
-
-        if (content && content.length > 0) {
-          text = content[0].text || text;
-        }
-      }
-    } catch (e) {
-      console.log("PARSE ERROR:", e);
-    }
-
-    return res.status(200).json({
+    res.status(200).json({
       cards: drawn,
       text
     });
 
   } catch (err) {
-    console.error("SERVER ERROR:", err);
-
-    return res.status(500).json({
-      error: err.message || "Server crash"
+    res.status(500).json({
+      error: err.message
     });
   }
 }
